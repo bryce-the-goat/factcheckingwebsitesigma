@@ -1,0 +1,2022 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>LOGI BEE Interactive Fact-Checking</title>
+    <style>
+      :root {
+        --ink: #3b2b13;
+        --paper: #fff3cf;
+        --sun: #ffd166;
+        --honey: #f6c55f;
+        --honey-dark: #e5a83f;
+        --amber: #f3a712;
+        --coral: #ff8fa3;
+        --leaf: #b7e4c7;
+        --navy: #6b4f2a;
+        --mint: #b8f2e6;
+        --sky: #7bdff2;
+        --shadow: rgba(60, 40, 10, 0.2);
+        --yes: #8ef0b0;
+        --no: #ffb3b3;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: "Georgia", "Times New Roman", serif;
+        color: var(--ink);
+        background:
+          radial-gradient(circle at 10% 10%, rgba(255, 255, 255, 0.7) 0 120px, transparent 130px),
+          radial-gradient(circle at 90% 20%, rgba(255, 232, 178, 0.7) 0 140px, transparent 150px),
+          radial-gradient(circle at 70% 80%, rgba(255, 214, 102, 0.4) 0 160px, transparent 170px),
+          radial-gradient(circle at 20% 85%, rgba(255, 184, 77, 0.35) 0 140px, transparent 150px),
+          linear-gradient(135deg, rgba(255, 209, 102, 0.3), rgba(255, 239, 200, 0.35)),
+          repeating-linear-gradient(60deg, rgba(255, 209, 102, 0.18) 0 14px, transparent 14px 28px),
+          repeating-linear-gradient(-60deg, rgba(255, 209, 102, 0.18) 0 14px, transparent 14px 28px),
+          linear-gradient(180deg, #fffbe8 0%, var(--paper) 45%, #f8e0a2 100%);
+        background-attachment: fixed;
+      }
+
+      h1,
+      h2,
+      h3 {
+        font-family: "Franklin Gothic Medium", "Arial Narrow", sans-serif;
+        letter-spacing: 0.5px;
+      }
+
+      main {
+        max-width: 1150px;
+        margin: 0 auto;
+        padding: 24px 20px 80px;
+      }
+
+      section {
+        margin: 32px 0;
+        background: rgba(255, 250, 230, 0.88);
+        border-radius: 18px;
+        padding: 28px;
+        box-shadow: 0 18px 35px var(--shadow);
+      }
+
+      .hero {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 24px;
+        align-items: center;
+        background:
+          linear-gradient(120deg, #fff2b5 0%, #ffe08a 45%, #ffd166 100%);
+        position: relative;
+        overflow: hidden;
+        border: 2px solid var(--honey-dark);
+      }
+
+      .hero::after {
+        content: "";
+        position: absolute;
+        right: -40px;
+        top: 20px;
+        width: 180px;
+        height: 180px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.5);
+        box-shadow: 0 0 0 12px rgba(255, 255, 255, 0.3);
+        animation: floaty 6s ease-in-out infinite;
+      }
+
+      @keyframes floaty {
+        0%,
+        100% {
+          transform: translateY(0);
+        }
+        50% {
+          transform: translateY(-12px);
+        }
+      }
+
+      .hero-title {
+        font-size: clamp(2rem, 3.2vw, 3.6rem);
+        margin-bottom: 8px;
+      }
+
+      .hero-subtitle {
+        font-size: 1.1rem;
+        margin-top: 0;
+      }
+
+      .cta {
+        padding: 14px 22px;
+        border: none;
+        border-radius: 999px;
+        background: var(--navy);
+        color: white;
+        font-weight: 700;
+        font-size: 1rem;
+        cursor: pointer;
+        box-shadow: 0 12px 20px rgba(34, 72, 112, 0.3);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+      }
+
+      .cta:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 16px 26px rgba(34, 72, 112, 0.35);
+      }
+
+      .lab-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 16px;
+        margin-top: 12px;
+      }
+
+      .panel {
+        background: white;
+        border-radius: 16px;
+        padding: 16px;
+        border: 2px solid var(--honey-dark);
+        box-shadow: 0 12px 20px var(--shadow);
+      }
+
+      .label {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background: var(--honey);
+        padding: 6px 12px;
+        border-radius: 999px;
+        font-weight: 700;
+        margin-bottom: 16px;
+        border: 1px solid var(--honey-dark);
+      }
+
+      #bugCanvas {
+        position: fixed;
+        inset: 0;
+        width: 100vw;
+        height: 100vh;
+        display: block;
+        pointer-events: none;
+        z-index: 9;
+      }
+
+      .status-bar {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 12px;
+        margin-top: 12px;
+      }
+
+      .pill {
+        background: #f1f5ff;
+        border-radius: 999px;
+        padding: 6px 12px;
+        font-weight: 700;
+        text-align: center;
+      }
+
+      .progress-track {
+        height: 12px;
+        background: #dbe7ff;
+        border-radius: 999px;
+        overflow: hidden;
+        border: 1px solid #c7d2fe;
+      }
+
+      .progress-bar {
+        height: 100%;
+        width: 0%;
+        background: linear-gradient(120deg, var(--mint), var(--sky));
+        transition: width 0.3s ease;
+      }
+
+      .cards-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 18px;
+      }
+
+      .flip-card {
+        perspective: 1000px;
+        height: auto; /* Let content decide height */
+        margin-bottom: 20px;
+      }
+
+      .flip-inner {
+        position: relative;
+        width: 100%;
+        transition: transform 0.6s ease;
+        transform-style: preserve-3d;
+        /* Remove display: grid from here if you used it before */
+      }
+
+      .flip-card.flipped .flip-inner {
+        transform: rotateY(180deg);
+      }
+
+      .flip-face {
+        backface-visibility: hidden;
+        border-radius: 16px;
+        padding: 16px;
+        background: linear-gradient(135deg, #fff9dc 0%, #fff0b9 100%);
+        border: 2px solid var(--honey-dark);
+        display: grid;
+        gap: 10px;
+        align-content: start;
+        box-shadow: 0 10px 22px var(--shadow);
+        width: 100%;
+        line-height: 1.3;
+        /* Remove inset: 0 and position: absolute from here */
+      }
+
+/* When NOT flipped: Front side takes up space, Back side is invisible/floats */
+.flip-card:not(.flipped) .front {
+  position: relative;
+}
+.flip-card:not(.flipped) .back {
+  position: absolute;
+  top: 0;
+  left: 0;
+  opacity: 0; /* Optional: extra safety */
+}
+
+/* When FLIPPED: Back side takes up space, Front side floats */
+.flip-card.flipped .front {
+  position: absolute;
+  top: 0;
+  left: 0;
+  opacity: 0;
+}
+.flip-card.flipped .back {
+  position: relative;
+  transform: rotateY(180deg);
+}
+
+      .flip-face.back {
+        transform: rotateY(180deg);
+        background:
+          linear-gradient(135deg, #fff1a8 0%, #ffe08a 100%);
+      }
+
+      .logic-symbol {
+        font-weight: 700;
+      }
+
+      .symbol-tooltip {
+        text-decoration: underline dotted;
+        cursor: help;
+      }
+
+      .drag-zone {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+        gap: 10px;
+        margin-top: 10px;
+      }
+
+      .draggable {
+        padding: 10px 12px;
+        background: white;
+        border: 2px solid var(--navy);
+        border-radius: 10px;
+        font-weight: 700;
+        text-align: center;
+        cursor: grab;
+        white-space: nowrap;
+        min-width: 110px;
+        padding-left: 4px;
+        padding-right: 12px;
+      }
+
+      .drop-target {
+        border: 2px dashed var(--navy);
+        border-radius: 12px;
+        padding: 12px;
+        text-align: center;
+        font-weight: 700;
+        min-height: 48px;
+        background: #f9fbff;
+      }
+
+      .drop-target.filled {
+        border-style: solid;
+        background: #e9f5ff;
+      }
+
+      .drop-target.correct {
+        border-color: #2f855a;
+        background: #e6ffef;
+        color: #1f5f3f;
+      }
+
+      .drop-target.wrong {
+        border-color: #c53030;
+        background: #ffecec;
+        color: #7b2020;
+      }
+
+      .btn {
+        padding: 10px 16px;
+        border: none;
+        border-radius: 10px;
+        background: var(--navy);
+        color: white;
+        font-weight: 700;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        transition: transform 0.15s ease, background 0.15s ease;
+      }
+
+      .btn:hover {
+        transform: translateY(-1px);
+      }
+
+      .btn:active {
+        transform: scale(0.97);
+      }
+
+      .btn.ghost {
+        background: white;
+        color: var(--navy);
+        border: 2px solid var(--honey-dark);
+      }
+
+      .btn.secondary {
+        background: var(--amber);
+        color: #3b2b13;
+      }
+
+      .btn:disabled {
+        background: #c9c9c9;
+        cursor: not-allowed;
+      }
+
+      .analysis {
+        margin-top: 10px;
+        padding: 10px 12px;
+        border-radius: 12px;
+        background: #fff6d8;
+        border: 1px solid #f1c35b;
+        display: none;
+      }
+
+      .analysis.visible {
+        display: block;
+      }
+
+      .result-badge {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        display: none;
+        padding: 6px 10px;
+        border-radius: 999px;
+        font-weight: 700;
+        text-align: center;
+        border: 2px solid transparent;
+        background: white;
+      }
+
+      .result-badge.show {
+        display: inline-block;
+      }
+
+      .result-badge.correct {
+        background: #e6ffef;
+        color: #1f5f3f;
+        border-color: #2f855a;
+      }
+
+      .result-badge.wrong {
+        background: #ffecec;
+        color: #7b2020;
+        border-color: #c53030;
+      }
+
+      .truth-table {
+        margin-top: 10px;
+        border-collapse: collapse;
+        width: 100%;
+        max-width: 360px;
+        background: #fffdf7;
+      }
+
+      .truth-table th,
+      .truth-table td {
+        border: 1px solid #b58b2a;
+        padding: 6px 10px;
+        text-align: center;
+      }
+
+      .truth-table th {
+        background: #ffe7a3;
+        color: #3b2b13;
+      }
+
+      .truth-table td {
+        background: #ffffff;
+      }
+
+      .truth-card {
+        position: relative;
+        cursor: pointer;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        background:
+          linear-gradient(135deg, #fff7dc 0%, #ffe4a1 100%);
+        border: 2px solid #e5a83f;
+      }
+
+
+      .truth-card h3 {
+        margin-top: 0;
+        color: #4b2f12;
+      }
+
+      .truth-card .hint {
+        color: #6b4f2a;
+      }
+
+      .truth-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 16px 26px var(--shadow);
+      }
+
+      .truth-table-wrapper {
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.35s ease;
+      }
+
+      .truth-card.open .truth-table-wrapper {
+        max-height: 500px;
+      }
+
+      .truth-card .hint {
+        font-weight: 700;
+        color: var(--navy);
+      }
+
+      .truth-toggle {
+        display: inline-flex;
+        gap: 6px;
+        align-items: center;
+      }
+
+      .toggle-btn {
+        border: 1px solid #aac0dd;
+        padding: 4px 8px;
+        border-radius: 8px;
+        background: white;
+        cursor: pointer;
+      }
+
+      .toggle-btn.active {
+        background: #ffe08a;
+        font-weight: 700;
+      }
+
+      .evidence {
+        margin-top: 12px;
+        border-radius: 12px;
+        border: 2px dashed var(--navy);
+        padding: 12px;
+        display: none;
+        background: white;
+      }
+
+      .evidence.visible {
+        display: block;
+      }
+
+      .evidence-body {
+        display: none;
+        margin-top: 8px;
+      }
+
+      .evidence-body.visible {
+        display: block;
+      }
+
+      .screenshot {
+        width: 100%;
+        min-height: 120px;
+        border-radius: 12px;
+        border: 2px dashed var(--navy);
+        background: linear-gradient(120deg, #fff1a8, #d9f7ff);
+        display: grid;
+        place-items: center;
+        font-weight: 700;
+        cursor: zoom-in;
+        padding: 8px;
+      }
+
+      .screenshot img {
+        width: 100%;
+        height: auto;
+        display: block;
+        object-fit: contain;
+        border-radius: 8px;
+      }
+      .envelope {
+        background: #f9fbff;
+        border-radius: 12px;
+        padding: 10px;
+        border: 2px solid var(--honey-dark);
+        display: grid;
+        gap: 8px;
+      }
+
+      
+
+      .image-modal .modal-content {
+        max-width: 520px;
+        text-align: center;
+      }
+
+      .image-zoom {
+        min-height: 260px;
+        border-radius: 16px;
+        border: 2px solid var(--honey-dark);
+        background: linear-gradient(120deg, #fff1a8, #d9f7ff);
+        display: grid;
+        place-items: center;
+        font-weight: 700;
+        margin: 14px 0;
+      }
+
+      .image-zoom img {
+        max-width: 100%;
+        max-height: 420px;
+        border-radius: 14px;
+        display: block;
+      }
+
+      .sources-list {
+        display: grid;
+        gap: 10px;
+      }
+
+      .accordion {
+        border-radius: 12px;
+        border: 1px solid #f1c35b;
+        overflow: hidden;
+      }
+
+      .accordion-header {
+        background: #fff1bf;
+        padding: 10px 12px;
+        font-weight: 700;
+        cursor: pointer;
+      }
+
+      .accordion-body {
+        display: none;
+        padding: 10px 12px;
+        background: white;
+        white-space: normal;
+        overflow-wrap: anywhere;
+        word-break: break-word;
+        line-height: 1.4;
+      }
+
+      .accordion.open .accordion-body {
+        display: block;
+      }
+
+      .modal {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.5);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        z-index: 20;
+      }
+
+      .modal.open {
+        display: flex;
+      }
+
+      .modal-content {
+        background: white;
+        border-radius: 16px;
+        padding: 20px;
+        max-width: 760px;
+        width: 100%;
+        border: 2px solid var(--navy);
+      }
+
+      .answer-grid {
+        display: grid;
+        gap: 10px;
+      }
+
+      .small {
+        font-size: 0.9rem;
+      }
+
+      .symbol-train {
+        margin-top: 12px;
+        padding: 12px;
+        border-radius: 12px;
+        border: 2px dashed var(--navy);
+        background: #fffaf0;
+        display: none;
+      }
+
+      .symbol-train.visible {
+        display: block;
+      }
+
+      .symbol-defs {
+        display: grid;
+        gap: 4px;
+        margin-bottom: 10px;
+      }
+
+      .symbol-prompt {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        font-size: 1.2rem;
+        font-weight: 700;
+        margin: 10px 0 12px;
+      }
+
+      .symbol-box {
+        min-width: 56px;
+        min-height: 40px;
+        border: 2px dashed var(--navy);
+        border-radius: 10px;
+        display: grid;
+        place-items: center;
+        background: #f9fbff;
+        font-size: 1.2rem;
+      }
+
+      .symbol-box.correct {
+        border-color: #2f855a;
+        background: #e6ffef;
+        color: #1f5f3f;
+      }
+
+      .symbol-box.wrong {
+        border-color: #c53030;
+        background: #ffecec;
+        color: #7b2020;
+      }
+
+      .symbol-options {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        justify-content: center;
+      }
+
+      .symbol-option {
+        width: 44px;
+        height: 44px;
+        display: grid;
+        place-items: center;
+        font-size: 1.2rem;
+        border-radius: 10px;
+        border: 2px solid var(--navy);
+        background: white;
+        cursor: grab;
+        font-weight: 700;
+      }
+
+      .symbol-feedback {
+        margin-top: 8px;
+        font-weight: 700;
+      }
+
+      .goodjob-modal .modal-content {
+        max-width: 420px;
+        text-align: center;
+      }
+
+      .goodjob-graphic {
+        margin: 12px auto 16px;
+        padding: 16px;
+        border-radius: 16px;
+        border: 2px solid var(--honey-dark);
+        background: linear-gradient(135deg, #fff1a8 0%, #ffe08a 100%);
+        animation: popIn 0.4s ease;
+      }
+
+      .goodjob-burst {
+        font-size: 2.4rem;
+        animation: wiggle 1.2s ease-in-out infinite;
+      }
+
+      .goodjob-text {
+        font-weight: 700;
+        margin-top: 6px;
+      }
+
+      .bee-speech {
+        position: fixed;
+        z-index: 6;
+        max-width: 220px;
+        padding: 10px 12px;
+        border-radius: 14px;
+        background: #fffdf4;
+        border: 2px solid var(--honey-dark);
+        box-shadow: 0 10px 18px var(--shadow);
+        font-weight: 700;
+        font-size: 0.95rem;
+        pointer-events: none;
+        opacity: 0;
+        transform: translateY(6px);
+        transition: opacity 0.2s ease, transform 0.2s ease;
+      }
+
+      .bee-speech.show {
+        opacity: 1;
+        transform: translateY(0);
+      }
+
+      .bee-speech::after {
+        content: "";
+        position: absolute;
+        left: 18px;
+        bottom: -10px;
+        width: 18px;
+        height: 18px;
+        background: #fffdf4;
+        border-left: 2px solid var(--honey-dark);
+        border-bottom: 2px solid var(--honey-dark);
+        transform: rotate(45deg);
+      }
+
+      @keyframes popIn {
+        from {
+          transform: scale(0.85);
+          opacity: 0;
+        }
+        to {
+          transform: scale(1);
+          opacity: 1;
+        }
+      }
+
+      @keyframes wiggle {
+        0%,
+        100% {
+          transform: rotate(0deg);
+        }
+        50% {
+          transform: rotate(8deg);
+        }
+      }
+
+    </style>
+  </head>
+  <body>
+    <main id="mainPage">
+      <section class="hero">
+        <div>
+          <h1 class="hero-title">LOGI-BEE Interactive Fact-Checking Website</h1>
+          <p class="hero-subtitle">Explore insect myths, symbolize logic, and test truth values with evidence.</p>
+          <button class="cta" id="startBtn">START FACT-CHECKING</button>
+          <div class="status-bar"></div>
+        </div>
+        <div class="panel">
+          <strong>LOGI-BEE is on the move!</strong>
+          <p class="small">Our amazing bee will follow you around the page as you test each myth.</p>
+        </div>
+      </section>
+
+      <section id="cardsSection">
+        <div class="label">&#128204; Claims &amp; Propositions</div>
+        <div class="cards-grid" id="cardsGrid"></div>
+        <div class="panel" id="stage2Gate" style="display:none; margin-top:16px;">
+          <strong>Stage 1 complete!</strong>
+          <p class="small">Ready for the next challenge?</p>
+          <button class="btn secondary" id="enterStage2">ENTER STAGE 2</button>
+        </div>
+      </section>
+
+      <section id="stage2Section" style="display:none;">
+        <div class="label">🐝 Stage 2 — Logical Symbols</div>
+        <p class="small">Answer the truth value first, then learn to match the correct logical symbol.</p>
+        <div class="cards-grid" id="stage2Grid"></div>
+        <div class="panel" id="stage3Gate" style="display:none; margin-top:16px;">
+          <strong>Stage 2 complete!</strong>
+          <p class="small">Truth table time!!</p>
+          <button class="btn secondary" id="enterStage3">ENTER STAGE 3</button>
+        </div>
+      </section>
+
+      <section id="truthTablesSection" style="display:none;">
+        <div class="label">&#128202; Stage 3 — Truth Tables</div>
+        <p class="small">Interact with the truth table.</p>
+        <div class="lab-grid" id="truthTables"></div>
+      </section>
+
+      <section id="finalActions" style="display:none;">
+        <div class="label">✅ Stage Complete</div>
+        <p class="small">You finished all stages! Choose what to view next.</p>
+        <div class="status-bar">
+          <button class="btn secondary" id="viewSourcesBtn">VIEW SOURCES</button>
+          <button class="btn secondary" id="viewAnswerBtn">VIEW ANSWER KEY</button>
+          <button class="btn secondary" id="viewScoreBtn" style="display:none;">VIEW SCORE</button>
+        </div>
+      </section>
+    </main>
+
+    <section id="sourcesPage" style="display:none;">
+      <div class="label">&#128218; Sources</div>
+      <div class="sources-list" id="sourcesList"></div>
+      <button class="btn ghost" id="returnFromSources">RETURN</button>
+    </section>
+
+    <section id="answerPage" style="display:none;">
+      <div class="label">&#128274; Answer Key</div>
+      <div class="answer-grid" id="answerGrid"></div>
+      <button class="btn ghost" id="returnFromAnswers">RETURN</button>
+    </section>
+
+    <div class="modal image-modal" id="imageModal">
+      <div class="modal-content">
+        <h2 id="imageTitle">Evidence</h2>
+        <div class="image-zoom" id="imageZoom"></div>
+        <button class="btn" id="closeImage">CLOSE</button>
+      </div>
+    </div>
+
+    <div class="modal goodjob-modal" id="goodJobModal">
+      <div class="modal-content">
+        <h2>Good Job!</h2>
+        <div class="goodjob-graphic" id="goodJobGraphic">
+          <div class="goodjob-burst">🎉</div>
+          <div class="goodjob-text">You matched the symbol correctly!</div>
+        </div>
+        <button class="btn" id="closeGoodJob">CLOSE</button>
+      </div>
+    </div>
+
+    <div class="modal" id="nameModal">
+      <div class="modal-content">
+        <h2>Enter Your Name</h2>
+        <p class="small">LOGI-BEE will cheer you on by name!</p>
+        <input id="nameInput" type="text" placeholder="Your name" style="width:100%; padding:10px; border-radius:10px; border:2px solid var(--honey-dark); font-size:1rem;" />
+        <button class="btn secondary" id="nameSubmit" style="margin-top:12px;">START</button>
+      </div>
+    </div>
+
+    <div class="modal" id="scoreModal">
+      <div class="modal-content">
+        <h2>Your Score</h2>
+        <div class="panel" id="scoreReadout" style="text-align:center; font-size:1.2rem; font-weight:700;"></div>
+        <button class="btn" id="closeScore">CLOSE</button>
+      </div>
+    </div>
+
+    <div class="bee-speech" id="beeSpeech" aria-live="polite"></div>
+
+    <canvas id="bugCanvas" width="520" height="240" aria-label="LOGI-BEE Mascot"></canvas>
+
+    <script>
+      const propositions = [
+        {
+          id: "P",
+          claim: "Lightning bugs (fireflies) can give electric shocks if touched.",
+          symbol: "P",
+          type: "Simple",
+          stage: 1,
+          truth: "FALSE",
+          explanation:
+            "Lightning bugs produce light via bioluminescence, not electricity; they cannot shock humans.",
+          image: "images/claim1.jpg",
+          evidence:
+            "Lightning bugs produce bioluminescence, not electricity - National Geographic source",
+        },
+        {
+          id: "Q",
+          claim: "Cockroaches can survive a nuclear explosion.",
+          symbol: "Q",
+          type: "Simple",
+          stage: 1,
+          truth: "FALSE",
+          explanation: "Cockroaches are resilient but cannot survive a nuclear explosion directly.",
+          image: "images/claim2.jpg",
+          evidence: "Cockroaches cannot survive a nuclear explosion - Smithsonian source",
+        },
+        {
+          id: "R",
+          claim: "If a bee stings, it dies afterward.",
+          symbol: "R",
+          type: "Simple",
+          stage: 1,
+          truth: "TRUE",
+          explanation: "Honeybees die after stinging humans because of their stinger anatomy.",
+          image: "images/claim3.jpg",
+          evidence: "Bee stinger anatomy causes death - Britannica source",
+        },
+        {
+          id: "S",
+          claim: "Eating insects is harmful to humans.",
+          symbol: "S",
+          type: "Simple",
+          stage: 1,
+          truth: "FALSE",
+          explanation: "Insects are edible and nutritious; proper preparation is safe for humans.",
+          image: "images/claim4.jpg",
+          evidence: "Edible insects are safe and nutritious - FAO/food science sources",
+        },
+        {
+          id: "T",
+          claim: "Ants can lift objects 50 times their body weight.",
+          symbol: "T",
+          type: "Simple",
+          stage: 1,
+          truth: "TRUE",
+          explanation: "Ants can lift 20-50 times their body weight depending on species.",
+          image: "images/claim5.jpg",
+          evidence: "Ant strength measurements - National Geographic source",
+        },
+        {
+          id: "P_OR_Q",
+          claim: "Lightning bugs give shocks OR cockroaches survive nuclear explosions.",
+          symbol: "P \u2228 Q",
+          type: "Compound",
+          stage: 2,
+          truth: "FALSE",
+          explanation: "Both P and Q are false; OR requires at least one true.",
+          image: "",
+          evidence: "",
+          symbolTemplate: "P \u25a1 Q",
+          symbolPrompt: ["P", "BOX", "Q"],
+          symbolAnswer: "\u2228",
+          symbolDefs: [
+            "P = Lightning bugs give shocks.",
+            "Q = Cockroaches survive nuclear explosions.",
+          ],
+        },
+        {
+          id: "S_AND_T",
+          claim: "Eating insects is harmful AND ants can lift 50x weight.",
+          symbol: "R \u2227 S",
+          type: "Compound",
+          stage: 2,
+          truth: "FALSE",
+          explanation: "R is false and S is true; AND requires both to be true.",
+          image: "",
+          evidence: "",
+          symbolTemplate: "R \u25a1 S",
+          symbolPrompt: ["R", "BOX", "S"],
+          symbolAnswer: "\u2227",
+          symbolDefs: [
+            "R = Eating insects is harmful.",
+            "S = Ants can lift 50x their weight.",
+          ],
+        },
+        {
+          id: "P_IMP_S",
+          claim: "If lightning bugs give shocks, then eating insects is harmful.",
+          symbol: "T \u2192 U",
+          type: "Compound",
+          stage: 2,
+          truth: "TRUE",
+          explanation: "Conditional statement: false -> false is TRUE in logic.",
+          image: "",
+          evidence: "",
+          symbolTemplate: "T \u25a1 U",
+          symbolPrompt: ["T", "BOX", "U"],
+          symbolAnswer: "\u2192",
+          symbolDefs: [
+            "T = Lightning bugs give shocks.",
+            "U = Eating insects is harmful.",
+          ],
+        },
+        {
+          id: "NOT_Q",
+          claim: "Cockroaches cannot survive nuclear explosions.",
+          symbol: "\u00acV",
+          type: "Simple (Negation)",
+          stage: 2,
+          truth: "TRUE",
+          explanation: "Negation of false = true.",
+          image: "",
+          evidence: "",
+          symbolTemplate: "\u25a1 V",
+          symbolPrompt: ["BOX", "V"],
+          symbolAnswer: "\u00ac",
+          symbolDefs: ["V = Cockroaches cannot survive nuclear explosions."],
+        },
+      ];
+
+      const truthTables = [
+        {
+          title: "P \u2228 Q",
+          headers: ["P", "Q", "P \u2228 Q"],
+          rows: [
+            ["T", "T", "T"],
+            ["T", "F", "T"],
+            ["F", "T", "T"],
+            ["F", "F", "F"],
+          ],
+        },
+        {
+          title: "R \u2227 S",
+          headers: ["R", "S", "R \u2227 S"],
+          rows: [
+            ["T", "T", "T"],
+            ["T", "F", "F"],
+            ["F", "T", "F"],
+            ["F", "F", "F"],
+          ],
+        },
+        {
+          title: "T \u2192 U",
+          headers: ["T", "U", "T \u2192 U"],
+          rows: [
+            ["T", "T", "T"],
+            ["T", "F", "F"],
+            ["F", "T", "T"],
+            ["F", "F", "T"],
+          ],
+        },
+      ];
+
+      const sources = [
+        { claim: "Claim #1", text: "https://kids.nationalgeographic.com/animals/invertebrates/facts/firefly#:~:text=They%20have%20special%20organs%20under,the%20ends%20of%20their%20abdomen." },
+        { claim: "Claim #2", text: "https://www.smithsonianmag.com/smart-news/cockroaches-are-becoming-increasingly-resistant-pesticides-180972567/" },
+        { claim: "Claim #3", text: "https://www.britannica.com/science/Do-Bees-Die-After-Stinging" },
+        { claim: "Claim #4", text: "https://www.fao.org/4/i3253e/i3253e.pdf" },
+        { claim: "Claim #5", text: "https://www.natgeokids.com/uk/discover/animals/insects/ant-facts/#:~:text=The%20ant%20is%20one%20of,bigger%20objects%20as%20a%20group!graphic" },
+      ];
+
+      const symbolTips = {
+        "\u00ac": "NOT",
+        "\u2227": "AND",
+        "\u2228": "OR",
+        "\u2192": "IF...THEN",
+        "\u2194": "IFF",
+      };
+
+      const symbolChoices = ["\u00ac", "\u2227", "\u2228", "\u2192", "\u2194"];
+      const speechPrompts = [
+        "We’re getting close to victory!",
+        "Oh this is a tough one.",
+        "You can do it!",
+        "PLEASE GET THIS ONE CORRECTLY OR ELSE...",
+      ];
+      const speechCorrect = [
+        "Nice work!",
+        "That’s correct!",
+        "Brilliant logic!",
+      ];
+      const speechWrong = ["really...", "did u really study?"];
+      let userName = "";
+
+      let audioCtx;
+      function ensureAudio() {
+        if (!audioCtx) {
+          audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        if (audioCtx.state === "suspended") {
+          audioCtx.resume();
+        }
+      }
+
+      function playTone(type) {
+        ensureAudio();
+        const now = audioCtx.currentTime;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        const noise = audioCtx.createBufferSource();
+        const buffer = audioCtx.createBuffer(1, 44100, 44100);
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < data.length; i++) {
+          data[i] = Math.random() * 2 - 1;
+        }
+        noise.buffer = buffer;
+
+        let freq = 440;
+        let duration = 0.18;
+        let shape = "sine";
+        let useNoise = false;
+        if (type === "flip") {
+          freq = 520;
+          duration = 0.15;
+        } else if (type === "drag") {
+          freq = 620;
+          duration = 0.08;
+        } else if (type === "correct") {
+          freq = 880;
+          duration = 0.25;
+          shape = "triangle";
+        } else if (type === "cheer") {
+          freq = 660;
+          duration = 0.35;
+          shape = "sine";
+        } else if (type === "wrong") {
+          freq = 180;
+          duration = 0.25;
+          shape = "square";
+        } else if (type === "rustle") {
+          useNoise = true;
+          duration = 0.22;
+        }
+
+        if (useNoise) {
+          const noiseGain = audioCtx.createGain();
+          noise.connect(noiseGain);
+          noiseGain.connect(audioCtx.destination);
+          noiseGain.gain.setValueAtTime(0.001, now);
+          noiseGain.gain.exponentialRampToValueAtTime(0.12, now + 0.02);
+          noiseGain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+          noise.start(now);
+          noise.stop(now + duration);
+          return;
+        }
+
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.type = shape;
+        osc.frequency.setValueAtTime(freq, now);
+        gain.gain.setValueAtTime(0.001, now);
+        gain.gain.exponentialRampToValueAtTime(0.18, now + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+        osc.start(now);
+        osc.stop(now + duration);
+
+        if (type === "cheer") {
+          const osc2 = audioCtx.createOscillator();
+          const gain2 = audioCtx.createGain();
+          osc2.connect(gain2);
+          gain2.connect(audioCtx.destination);
+          osc2.type = "triangle";
+          osc2.frequency.setValueAtTime(880, now + 0.05);
+          gain2.gain.setValueAtTime(0.001, now);
+          gain2.gain.exponentialRampToValueAtTime(0.2, now + 0.05);
+          gain2.gain.exponentialRampToValueAtTime(0.001, now + duration);
+          osc2.start(now + 0.05);
+          osc2.stop(now + duration);
+        }
+      }
+
+      const cardsGrid = document.getElementById("cardsGrid");
+      const stage2Grid = document.getElementById("stage2Grid");
+      const stage2Gate = document.getElementById("stage2Gate");
+      const stage2Section = document.getElementById("stage2Section");
+      const truthTablesSection = document.getElementById("truthTablesSection");
+      const truthTablesEl = document.getElementById("truthTables");
+      const sourcesList = document.getElementById("sourcesList");
+      const progressBar = document.getElementById("progressBar");
+      const imageModal = document.getElementById("imageModal");
+      const imageZoom = document.getElementById("imageZoom");
+      const imageTitle = document.getElementById("imageTitle");
+      const closeImage = document.getElementById("closeImage");
+      const goodJobModal = document.getElementById("goodJobModal");
+      const closeGoodJob = document.getElementById("closeGoodJob");
+      const beeSpeech = document.getElementById("beeSpeech");
+      const mainPage = document.getElementById("mainPage");
+      const sourcesPage = document.getElementById("sourcesPage");
+      const answerPage = document.getElementById("answerPage");
+      const finalActions = document.getElementById("finalActions");
+      const viewSourcesBtn = document.getElementById("viewSourcesBtn");
+      const viewAnswerBtn = document.getElementById("viewAnswerBtn");
+      const returnFromSources = document.getElementById("returnFromSources");
+      const returnFromAnswers = document.getElementById("returnFromAnswers");
+      const viewScoreBtn = document.getElementById("viewScoreBtn");
+      const scoreModal = document.getElementById("scoreModal");
+      const scoreReadout = document.getElementById("scoreReadout");
+      const closeScore = document.getElementById("closeScore");
+      const nameModal = document.getElementById("nameModal");
+      const nameInput = document.getElementById("nameInput");
+      const nameSubmit = document.getElementById("nameSubmit");
+
+      const stage1Ids = propositions.filter((prop) => prop.stage === 1).map((prop) => prop.id);
+      const stage2Ids = propositions.filter((prop) => prop.stage === 2).map((prop) => prop.id);
+      const stage1Attempts = new Set();
+      const stage2Attempts = new Set();
+      const stage3Attempts = new Set();
+      const stage1Correct = new Set();
+      const stage2TruthCorrect = new Set();
+      const stage2SymbolCorrect = new Set();
+      
+      function computeScore() {
+        let score = stage1Correct.size;
+        let stage2Score = 0;
+        stage2Ids.forEach((id) => {
+          if (stage2TruthCorrect.has(id) && stage2SymbolCorrect.has(id)) {
+            stage2Score += 2;
+          }
+        });
+        return score + stage2Score;
+      }
+
+      function allStagesComplete() {
+        const stage1Done = stage1Attempts.size === stage1Ids.length;
+        const stage2Done = stage2Attempts.size === stage2Ids.length;
+        const stage3Done = stage3Attempts.size === truthTables.length;
+        return stage1Done && stage2Done && stage3Done;
+      }
+
+      function updateScore() {
+        const totalSteps = stage1Ids.length + stage2Ids.length + truthTables.length;
+        const attempted = stage1Attempts.size + stage2Attempts.size + stage3Attempts.size;
+        if (progressBar) {
+          progressBar.style.width = `${(attempted / totalSteps) * 100}%`;
+        }
+        updateStage2Gate();
+        const done = allStagesComplete();
+        finalActions.style.display = done ? "block" : "none";
+        if (viewScoreBtn) {
+          viewScoreBtn.style.display = done ? "inline-flex" : "none";
+        }
+      }
+
+      function updateStage2Gate() {
+        stage2Gate.style.display = stage1Attempts.size === stage1Ids.length ? "block" : "none";
+      }
+
+      function updateStage3Gate() {
+        const stage3Gate = document.getElementById("stage3Gate");
+        if (stage3Gate) {
+          stage3Gate.style.display = stage2Attempts.size === stage2Ids.length ? "block" : "none";
+        }
+      }
+
+      function recordAttempt(stage, id) {
+        if (stage === 1) {
+          stage1Attempts.add(id);
+          updateStage2Gate();
+        } else if (stage === 2) {
+          stage2Attempts.add(id);
+          updateStage3Gate();
+        } else if (stage === 3) {
+          stage3Attempts.add(id);
+        }
+        updateScore();
+      }
+
+      function pickRandom(list) {
+        return list[Math.floor(Math.random() * list.length)];
+      }
+
+      function showSpeech(text) {
+        if (!text) return;
+        const prefix = userName ? `${userName}, ` : "";
+        beeSpeech.textContent = `${prefix}${text}`;
+        beeSpeech.classList.add("show");
+        clearTimeout(beeSpeech.hideTimer);
+        beeSpeech.hideTimer = setTimeout(() => {
+          beeSpeech.classList.remove("show");
+        }, 1800);
+      }
+
+      function buildCards() {
+        const stage1 = propositions.filter((prop) => prop.stage === 1);
+        const stage2 = propositions.filter((prop) => prop.stage === 2);
+        stage1.forEach((prop, idx) => createStage1Card(prop, idx, cardsGrid));
+        stage2.forEach((prop, idx) => createStage2Card(prop, idx, stage2Grid));
+      }
+
+      function createStage1Card(prop, idx, grid) {
+        const card = document.createElement("div");
+        card.className = "flip-card";
+        card.innerHTML = `
+          <div class="flip-inner">
+            <div class="flip-face front">
+              <strong>Claim ${idx + 1}</strong>
+              <div>${prop.claim}</div>
+              <button class="btn ghost" data-flip>VIEW SYMBOL</button>
+            </div>
+            <div class="flip-face back">
+              <div class="logic-symbol">Symbol: ${prop.symbol}</div>
+              <div class="small">Type: ${prop.type}</div>
+              <button class="btn ghost" data-flip>BACK TO CLAIM</button>
+              <div class="analysis" data-analysis>
+                Determine the truth value by dragging one verdict.
+              </div>
+              <div class="drag-zone">
+                <div class="draggable" draggable="true" data-value="TRUE">TRUE</div>
+                <div class="draggable" draggable="true" data-value="FALSE">FALSE</div>
+              </div>
+              <div class="drop-target" data-drop>DROP VERDICT HERE</div>
+              <button class="btn secondary" data-submit disabled>SUBMIT</button>
+              <div class="analysis" data-feedback></div>
+              <div class="result-badge" data-result></div>
+              <div class="evidence" data-evidence>
+                <button class="btn ghost" data-evidence-toggle disabled>OPEN EVIDENCE</button>
+                <div class="evidence-body" data-evidence-body>
+                  <div class="envelope">
+                    <div class="screenshot">
+                      <img src="${prop.image}" alt="Evidence Screenshot">
+                    </div>
+                    <div data-evidence-text></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+        grid.appendChild(card);
+        wireVerdict(card, prop, { withEvidence: true });
+      }
+
+      function createStage2Card(prop, idx, grid) {
+        const card = document.createElement("div");
+        card.className = "flip-card";
+        card.innerHTML = `
+          <div class="flip-inner">
+            <div class="flip-face front">
+              <strong>Claim ${idx + 6}</strong>
+              <div>${prop.claim}</div>
+              <button class="btn ghost" data-flip>VIEW CARD</button>
+            </div>
+            <div class="flip-face back">
+              <div class="logic-symbol">Logic Form: ${prop.symbolTemplate}</div>
+              <div class="small">Type: ${prop.type}</div>
+              <button class="btn ghost" data-flip>BACK TO CLAIM</button>
+              <div class="analysis" data-analysis>
+                Determine the truth value by dragging one verdict.
+              </div>
+              <div class="drag-zone">
+                <div class="draggable" draggable="true" data-value="TRUE">TRUE</div>
+                <div class="draggable" draggable="true" data-value="FALSE">FALSE</div>
+              </div>
+              <div class="drop-target" data-drop>DROP VERDICT HERE</div>
+              <button class="btn secondary" data-submit disabled>NEXT</button>
+              <div class="analysis" data-feedback></div>
+              <div class="symbol-train" data-symbol-train>
+                <div class="symbol-defs">
+                  ${prop.symbolDefs.map((def) => `<div>${def}</div>`).join("")}
+                </div>
+                <div class="small" style="font-weight:700;">Drag the correct logical symbol into the box.</div>
+                <div class="symbol-prompt">
+                  ${prop.symbolPrompt
+                    .map((token) =>
+                      token === "BOX"
+                        ? `<div class="symbol-box" data-symbol-drop></div>`
+                        : `<span>${token}</span>`
+                    )
+                    .join("")}
+                </div>
+                <div class="symbol-options">
+                  ${symbolChoices
+                    .map(
+                      (sym) =>
+                        `<div class="symbol-option" draggable="true" data-symbol="${sym}">${sym}</div>`
+                    )
+                    .join("")}
+                </div>
+                <div class="analysis symbol-feedback" data-symbol-feedback></div>
+              </div>
+            </div>
+          </div>
+        `;
+        grid.appendChild(card);
+        wireVerdict(card, prop, { withEvidence: false, enableSymbols: true });
+      }
+
+      function wireVerdict(card, prop, options) {
+        const flipButtons = card.querySelectorAll("[data-flip]");
+        const analysis = card.querySelector("[data-analysis]");
+        const drop = card.querySelector("[data-drop]");
+        const submit = card.querySelector("[data-submit]");
+        const feedback = card.querySelector("[data-feedback]");
+        const resultBadge = card.querySelector("[data-result]");
+        const evidence = card.querySelector("[data-evidence]");
+        const evidenceText = card.querySelector("[data-evidence-text]");
+        const evidenceToggle = card.querySelector("[data-evidence-toggle]");
+        const evidenceBody = card.querySelector("[data-evidence-body]");
+        const screenshot = card.querySelector(".screenshot");
+        const symbolPanel = card.querySelector("[data-symbol-train]");
+        const symbolDrop = card.querySelector("[data-symbol-drop]");
+        const symbolFeedback = card.querySelector("[data-symbol-feedback]");
+        let selected = null;
+
+        flipButtons.forEach((btn) => {
+          btn.addEventListener("click", () => {
+            card.classList.toggle("flipped");
+            playTone("flip");
+            if (card.classList.contains("flipped")) {
+              showSpeech(pickRandom(speechPrompts));
+            }
+          });
+        });
+
+        card.querySelectorAll(".draggable").forEach((drag) => {
+          drag.addEventListener("dragstart", (event) => {
+            event.dataTransfer.setData("text/plain", drag.dataset.value);
+            playTone("drag");
+          });
+        });
+
+        drop.addEventListener("dragover", (event) => {
+          event.preventDefault();
+        });
+
+        drop.addEventListener("drop", (event) => {
+          event.preventDefault();
+          selected = event.dataTransfer.getData("text/plain");
+          if (!selected) return;
+          drop.textContent = `Verdict: ${selected}`;
+          drop.classList.add("filled");
+          drop.classList.remove("correct", "wrong");
+          const isCorrectDrop = selected === prop.truth;
+          if (resultBadge) {
+            resultBadge.classList.remove("show", "correct", "wrong");
+          }
+          if (isCorrectDrop) {
+            bug.mood = "happy";
+          } else {
+            bug.mood = "confused";
+          }
+          setTimeout(() => {
+            bug.mood = bug.baseMood;
+          }, 800);
+          analysis.classList.add("visible");
+          submit.disabled = false;
+        });
+
+        submit.addEventListener("click", () => {
+          if (!selected) return;
+          if (selected === prop.truth) {
+            playTone("correct");
+            playTone("cheer");
+            bug.mood = "happy";
+            bug.jump = 28;
+            bug.cheer = 14;
+            showSpeech(pickRandom(speechCorrect));
+            if (prop.stage === 1) {
+              stage1Correct.add(prop.id);
+            }
+            if (prop.stage === 2) {
+              stage2TruthCorrect.add(prop.id);
+            }
+            for (let i = 0; i < 36; i++) {
+              confetti.push({
+                x: bug.x + (Math.random() * 60 - 30),
+                y: bug.y - 20,
+                vx: (Math.random() - 0.5) * 2,
+                vy: Math.random() * -2 - 1,
+                size: Math.random() * 4 + 3,
+                life: 60 + Math.random() * 20,
+                color: ["#ffd166", "#7bdff2", "#ff8fa3", "#b8f2e6"][i % 4],
+              });
+            }
+            setTimeout(() => {
+              bug.mood = bug.baseMood;
+            }, 1200);
+            feedback.classList.add("visible");
+            feedback.innerHTML = "Correct. " + prop.explanation;
+            feedback.style.color = "#2f855a";
+            if (resultBadge) {
+              resultBadge.classList.remove("show", "correct", "wrong");
+            }
+            if (options.withEvidence && evidence && evidenceText && evidenceToggle) {
+              evidence.classList.add("visible");
+              evidenceText.textContent = prop.evidence;
+              evidenceToggle.disabled = false;
+            }
+            if (prop.stage === 1 || prop.stage === 2) {
+              recordAttempt(prop.stage, prop.id);
+            }
+          } else {
+            playTone("wrong");
+            bug.mood = "sad";
+            showSpeech(pickRandom(speechWrong));
+            setTimeout(() => {
+              bug.mood = bug.baseMood;
+            }, 1200);
+            feedback.classList.add("visible");
+            feedback.innerHTML = "Incorrect.";
+            feedback.style.color = "#c53030";
+            if (resultBadge) {
+              resultBadge.classList.remove("show", "correct", "wrong");
+            }
+            if (options.withEvidence && evidence && evidenceText && evidenceToggle) {
+              evidence.classList.add("visible");
+              evidenceText.textContent = prop.evidence;
+              evidenceToggle.disabled = false;
+            }
+            if (prop.stage === 1 || prop.stage === 2) {
+              recordAttempt(prop.stage, prop.id);
+            }
+          }
+
+          if (symbolPanel) {
+            symbolPanel.classList.add("visible");
+            playTone("flip");
+          }
+        });
+
+        if (evidenceToggle && evidenceBody && evidence) {
+          evidenceToggle.addEventListener("click", () => {
+            if (!evidence.classList.contains("visible")) return;
+            evidenceBody.classList.toggle("visible");
+            playTone("rustle");
+          });
+        }
+
+        if (screenshot && evidence && imageModal) {
+          screenshot.addEventListener("click", () => {
+            if (!evidence.classList.contains("visible")) return;
+            imageTitle.textContent = `Evidence for ${prop.symbol}`;
+            imageZoom.innerHTML = `<img src="${prop.image}" alt="Evidence for ${prop.symbol}" />`;
+            imageModal.classList.add("open");
+          });
+        }
+
+        if (symbolDrop && symbolFeedback) {
+          symbolDrop.addEventListener("dragover", (event) => {
+            event.preventDefault();
+          });
+
+          symbolDrop.addEventListener("drop", (event) => {
+            event.preventDefault();
+            const picked = event.dataTransfer.getData("text/symbol");
+            if (!picked) return;
+            symbolDrop.textContent = picked;
+            symbolDrop.classList.remove("correct", "wrong");
+            const isCorrect = picked === prop.symbolAnswer;
+            symbolDrop.classList.toggle("correct", isCorrect);
+            symbolDrop.classList.toggle("wrong", !isCorrect);
+            symbolFeedback.classList.add("visible");
+            if (isCorrect) {
+              symbolFeedback.textContent = "Correct symbol!";
+              symbolFeedback.style.color = "#2f855a";
+              bug.mood = "happy";
+              bug.jump = 26;
+              bug.cheer = 14;
+              playTone("correct");
+              playTone("cheer");
+              showSpeech(pickRandom(speechCorrect));
+              stage2SymbolCorrect.add(prop.id);
+              updateStage3Gate();
+              recordAttempt(prop.stage, prop.id);
+              setTimeout(() => {
+                bug.mood = bug.baseMood;
+              }, 1200);
+            } else {
+              symbolFeedback.textContent = "Wrong symbol.";
+              symbolFeedback.style.color = "#c53030";
+              bug.mood = "sad";
+              playTone("wrong");
+              showSpeech(pickRandom(speechWrong));
+              recordAttempt(prop.stage, prop.id);
+              setTimeout(() => {
+                bug.mood = bug.baseMood;
+              }, 1200);
+            }
+            updateScore();
+          });
+
+          card.querySelectorAll("[data-symbol]").forEach((option) => {
+            option.addEventListener("dragstart", (event) => {
+              event.dataTransfer.setData("text/symbol", option.dataset.symbol);
+              playTone("drag");
+            });
+          });
+        }
+      }
+
+      function buildTruthTables() {
+        truthTables.forEach((table) => {
+          const panel = document.createElement("div");
+          panel.className = "panel truth-card";
+          panel.innerHTML = `
+            <h3>${table.title}</h3>
+            <div class="hint">Click to open / close</div>
+            <div class="truth-table-wrapper">
+              <table class="truth-table">
+                <thead>
+                  <tr>${table.headers.map((h) => `<th>${h}</th>`).join("")}</tr>
+                </thead>
+                <tbody>
+                  ${table.rows
+                    .map(
+                      (row, idx) => `
+                    <tr>
+                      ${row
+                        .map((cell, cellIdx) => {
+                          if (cellIdx < row.length - 1) {
+                            return `<td>
+                              <div class="truth-toggle" data-row="${idx}" data-col="${cellIdx}">
+                                <button class="toggle-btn active" data-val="T">T</button>
+                                <button class="toggle-btn" data-val="F">F</button>
+                              </div>
+                            </td>`;
+                          }
+                          return `<td data-result="${idx}">${cell}</td>`;
+                        })
+                        .join("")}
+                    </tr>`
+                    )
+                    .join("")}
+                </tbody>
+              </table>
+            </div>
+          `;
+          truthTablesEl.appendChild(panel);
+
+          panel.addEventListener("click", (event) => {
+            if (event.target.closest(".truth-table") || event.target.closest(".toggle-btn")) return;
+            panel.classList.toggle("open");
+            playTone("flip");
+            recordAttempt(3, table.title);
+          });
+
+          panel.querySelectorAll(".truth-toggle").forEach((toggle) => {
+            const buttons = toggle.querySelectorAll(".toggle-btn");
+            buttons.forEach((btn) => {
+              btn.addEventListener("click", () => {
+                buttons.forEach((b) => b.classList.remove("active"));
+                btn.classList.add("active");
+                updateTruthTable(panel, table);
+                playTone("drag");
+                recordAttempt(3, table.title);
+              });
+            });
+          });
+
+        });
+      }
+
+      function updateTruthTable(panel, table) {
+        const rowCount = table.rows.length;
+        for (let r = 0; r < rowCount; r++) {
+          const toggles = panel.querySelectorAll(`[data-row="${r}"]`);
+          const values = Array.from(toggles).map((toggle) => {
+            const active = toggle.querySelector(".toggle-btn.active");
+            return active ? active.dataset.val : "T";
+          });
+          let result = "F";
+          if (table.title.includes("\u2228")) {
+            result = values.includes("T") ? "T" : "F";
+          } else if (table.title.includes("\u2227")) {
+            result = values.every((v) => v === "T") ? "T" : "F";
+          } else if (table.title.includes("\u2192")) {
+            result = values[0] === "T" && values[1] === "F" ? "F" : "T";
+          }
+          const cell = panel.querySelector(`[data-result="${r}"]`);
+          if (cell) cell.textContent = result;
+        }
+      }
+
+      function buildSources() {
+        sources.forEach((source) => {
+          const wrap = document.createElement("div");
+          wrap.className = "accordion";
+          wrap.innerHTML = `
+            <div class="accordion-header">${source.claim}</div>
+            <div class="accordion-body">${source.text}</div>
+          `;
+          wrap.querySelector(".accordion-header").addEventListener("click", () => {
+            wrap.classList.toggle("open");
+          });
+          const body = wrap.querySelector(".accordion-body");
+          body.textContent = source.text
+            .split(";")
+            .map((item) => item.trim())
+            .filter(Boolean)
+            .join("\n");
+          sourcesList.appendChild(wrap);
+        });
+      }
+
+      function buildAnswerKey() {
+        const grid = document.getElementById("answerGrid");
+        propositions.forEach((prop, idx) => {
+          const row = document.createElement("div");
+          row.className = "panel";
+          row.innerHTML = `
+            <strong>Claim ${idx + 1}:</strong> ${prop.claim}<br />
+            <span class="logic-symbol">Symbol: ${prop.symbol}</span><br />
+            <strong>Truth:</strong> ${prop.truth}<br />
+            <span class="small">${prop.explanation}</span>
+          `;
+          grid.appendChild(row);
+        });
+
+        truthTables.forEach((table) => {
+          const row = document.createElement("div");
+          row.className = "panel";
+          row.innerHTML = `
+            <strong>Truth Table: ${table.title}</strong>
+            <table class="truth-table">
+              <thead>
+                <tr>${table.headers.map((h) => `<th>${h}</th>`).join("")}</tr>
+              </thead>
+              <tbody>
+                ${table.rows
+                  .map((r) => `<tr>${r.map((cell) => `<td>${cell}</td>`).join("")}</tr>`)
+                  .join("")}
+              </tbody>
+            </table>
+          `;
+          grid.appendChild(row);
+        });
+      }
+
+      function applySymbolTooltips() {
+        document.querySelectorAll(".logic-symbol").forEach((el) => {
+          let html = el.innerHTML;
+          Object.keys(symbolTips).forEach((sym) => {
+            html = html.replaceAll(
+              sym,
+              `<span class="symbol-tooltip" title="${symbolTips[sym]}">${sym}</span>`
+            );
+          });
+          el.innerHTML = html;
+        });
+      }
+
+      const canvas = document.getElementById("bugCanvas");
+      const ctx = canvas.getContext("2d");
+      const confetti = [];
+      const bug = {
+        x: 140,
+        y: 120,
+        targetX: 140,
+        targetY: 120,
+        mood: "happy",
+        baseMood: "happy",
+        antenna: 0,
+        jump: 0,
+        lookX: 0,
+        lookY: 0,
+        blink: 0,
+        hoverBoost: false,
+        cheer: 0,
+      };
+
+      function resizeCanvas() {
+        const ratio = window.devicePixelRatio || 1;
+        canvas.width = window.innerWidth * ratio;
+        canvas.height = window.innerHeight * ratio;
+        ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+        bug.x = window.innerWidth * 0.5;
+        bug.y = window.innerHeight * 0.5;
+        bug.targetX = bug.x;
+        bug.targetY = bug.y;
+      }
+
+      function drawBug() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        const x = bug.x;
+        const y = bug.y - bug.jump;
+
+        const wave = Math.sin(bug.antenna) * 3;
+
+        // small antennae on top of head
+        ctx.strokeStyle = "#6b4f2a";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(x - 20, y - 44);
+        ctx.quadraticCurveTo(x - 26, y - 58 + wave, x - 18, y - 68);
+        ctx.moveTo(x + 20, y - 44);
+        ctx.quadraticCurveTo(x + 26, y - 58 - wave, x + 18, y - 68);
+        ctx.stroke();
+        ctx.fillStyle = "#6b4f2a";
+        ctx.beginPath();
+        ctx.arc(x - 18, y - 70, 3.5, 0, Math.PI * 2);
+        ctx.arc(x + 18, y - 70, 3.5, 0, Math.PI * 2);
+        ctx.fill();
+
+        // wings
+        ctx.fillStyle = "rgba(215, 244, 255, 0.9)";
+        ctx.beginPath();
+        ctx.ellipse(x - 18, y - 14, 26, 16, -0.4, 0, Math.PI * 2);
+        ctx.ellipse(x + 18, y - 14, 26, 16, 0.4, 0, Math.PI * 2);
+        ctx.fill();
+
+        // body (bee)
+        ctx.fillStyle = "#f7d86a";
+        ctx.beginPath();
+        ctx.ellipse(x, y + 6, 34, 24, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        // stripes (vertical, clipped to body)
+        // stripes (horizontal, clipped to body)
+        ctx.save();
+        ctx.beginPath();
+        ctx.ellipse(x, y + 6, 34, 24, 0, 0, Math.PI * 2);
+        ctx.clip();
+        ctx.fillStyle = "#5a3b1f";
+        ctx.fillRect(x - 24, y - 6, 48, 4);
+        ctx.fillRect(x - 24, y + 2, 48, 4);
+        ctx.fillRect(x - 24, y + 10, 48, 4);
+        ctx.restore();
+
+        // head + face (centered)
+        ctx.fillStyle = "#f7d86a";
+        ctx.beginPath();
+        ctx.arc(x, y - 30, 16, 0, Math.PI * 2);
+        ctx.fill();
+
+        const eyeOffsetX = bug.lookX * 2;
+        const eyeOffsetY = bug.lookY * 2;
+        const eyeScale = bug.mood === "scared" ? 1.25 : 1;
+        ctx.fillStyle = "#fefefe";
+        ctx.beginPath();
+        ctx.ellipse(x - 6, y - 32, 6 * eyeScale, 7 * eyeScale, 0, 0, Math.PI * 2);
+        ctx.ellipse(x + 6, y - 32, 6 * eyeScale, 7 * eyeScale, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = "#222";
+        ctx.beginPath();
+        ctx.arc(x - 6 + eyeOffsetX, y - 32 + eyeOffsetY, 2.4, 0, Math.PI * 2);
+        ctx.arc(x + 6 + eyeOffsetX, y - 32 + eyeOffsetY, 2.4, 0, Math.PI * 2);
+        ctx.fill();
+
+        // tiny smile near eyes
+        ctx.strokeStyle = "#6b4f2a";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        if (bug.mood === "confused") {
+          ctx.moveTo(x - 6, y - 24);
+          ctx.lineTo(x + 6, y - 26);
+        } else if (bug.mood === "sad") {
+          ctx.arc(x, y - 22, 4, Math.PI, Math.PI * 2);
+        } else if (bug.mood === "scared") {
+          ctx.moveTo(x - 4, y - 23);
+          ctx.lineTo(x + 4, y - 23);
+        } else {
+          ctx.arc(x, y - 24, 4, 0, Math.PI);
+        }
+        ctx.stroke();
+
+        // blush close to eyes
+        ctx.fillStyle = "rgba(255, 159, 186, 0.7)";
+        ctx.beginPath();
+        ctx.ellipse(x - 12, y - 26, 5, 3.5, 0, 0, Math.PI * 2);
+        ctx.ellipse(x + 12, y - 26, 5, 3.5, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        if (bug.cheer > 0) {
+        // confetti
+        confetti.forEach((c) => {
+          ctx.fillStyle = c.color;
+          ctx.fillRect(c.x, c.y, c.size, c.size);
+        });
+          ctx.fillStyle = "rgba(255, 214, 102, 0.9)";
+          ctx.beginPath();
+          ctx.arc(x + 48, y - 40, 4, 0, Math.PI * 2);
+          ctx.arc(x + 60, y - 26, 3, 0, Math.PI * 2);
+          ctx.arc(x + 40, y - 24, 3, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        // no legs (cute floating bee)
+      }
+
+      function animateBug() {
+        bug.antenna += bug.hoverBoost ? 0.1 : 0.05;
+        if (bug.jump > 0) bug.jump -= 1.2;
+        // blinking disabled to avoid lens artifacts
+        if (bug.cheer > 0) bug.cheer -= 0.2;
+        bug.x += (bug.targetX - bug.x) * 0.08;
+        bug.y += (bug.targetY - bug.y) * 0.08;
+        if (beeSpeech) {
+          beeSpeech.style.left = `${Math.min(window.innerWidth - 240, Math.max(12, bug.x + 36))}px`;
+          beeSpeech.style.top = `${Math.max(12, bug.y - 120)}px`;
+        }
+        drawBug();
+        requestAnimationFrame(animateBug);
+        for (let i = confetti.length - 1; i >= 0; i--) {
+          const c = confetti[i];
+          c.y += c.vy;
+          c.x += c.vx;
+          c.vy += 0.1;
+          c.life -= 1;
+          if (c.life <= 0) confetti.splice(i, 1);
+        }
+      }
+
+      document.addEventListener("mousemove", (event) => {
+        const cx = window.innerWidth / 2;
+        const cy = window.innerHeight / 2;
+        bug.lookX = Math.max(-1, Math.min(1, (event.clientX - cx) / 140));
+        bug.lookY = Math.max(-1, Math.min(1, (event.clientY - cy) / 140));
+        const offsetX = 70;
+        const offsetY = -55;
+        bug.targetX = Math.max(80, Math.min(window.innerWidth - 80, event.clientX + offsetX));
+        bug.targetY = Math.max(80, Math.min(window.innerHeight - 60, event.clientY + offsetY));
+      });
+
+      window.addEventListener("resize", resizeCanvas);
+
+      document.addEventListener("click", () => {
+        bug.jump = 16;
+      });
+
+      document.getElementById("startBtn").addEventListener("click", () => {
+        if (!userName) {
+          nameModal.classList.add("open");
+          nameInput.focus();
+          return;
+        }
+        playTone("flip");
+        document.getElementById("cardsSection").scrollIntoView({ behavior: "smooth" });
+      });
+
+      cardsGrid.addEventListener("mouseenter", () => {
+        bug.hoverBoost = true;
+      });
+      cardsGrid.addEventListener("mouseleave", () => {
+        bug.hoverBoost = false;
+      });
+      stage2Grid.addEventListener("mouseenter", () => {
+        bug.hoverBoost = true;
+      });
+      stage2Grid.addEventListener("mouseleave", () => {
+        bug.hoverBoost = false;
+      });
+
+      closeImage.addEventListener("click", () => {
+        imageModal.classList.remove("open");
+      });
+
+      closeGoodJob.addEventListener("click", () => {
+        goodJobModal.classList.remove("open");
+      });
+
+      function showPage(target) {
+        mainPage.style.display = target === "main" ? "block" : "none";
+        sourcesPage.style.display = target === "sources" ? "block" : "none";
+        answerPage.style.display = target === "answers" ? "block" : "none";
+        if (target === "main") {
+          finalActions.scrollIntoView({ behavior: "smooth" });
+        } else {
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        }
+      }
+
+      viewSourcesBtn.addEventListener("click", () => showPage("sources"));
+      viewAnswerBtn.addEventListener("click", () => showPage("answers"));
+      returnFromSources.addEventListener("click", () => showPage("main"));
+      returnFromAnswers.addEventListener("click", () => showPage("main"));
+
+      viewScoreBtn.addEventListener("click", () => {
+        scoreReadout.textContent = `${computeScore()}/13`;
+        scoreModal.classList.add("open");
+      });
+
+      closeScore.addEventListener("click", () => {
+        scoreModal.classList.remove("open");
+      });
+
+      nameSubmit.addEventListener("click", () => {
+        const value = nameInput.value.trim();
+        if (!value) {
+          nameInput.focus();
+          return;
+        }
+        userName = value;
+        nameModal.classList.remove("open");
+        playTone("flip");
+      });
+
+      nameInput.addEventListener("keydown", (event) => {
+        if (event.key === "Enter") {
+          nameSubmit.click();
+        }
+      });
+
+      document.getElementById("enterStage2").addEventListener("click", () => {
+        stage2Section.style.display = "block";
+        stage2Section.scrollIntoView({ behavior: "smooth" });
+        bug.baseMood = "scared";
+        bug.mood = "scared";
+      });
+
+      document.getElementById("enterStage3").addEventListener("click", () => {
+        truthTablesSection.style.display = "block";
+        truthTablesSection.scrollIntoView({ behavior: "smooth" });
+      });
+
+
+      resizeCanvas();
+      buildCards();
+      buildTruthTables();
+      buildSources();
+      buildAnswerKey();
+      applySymbolTooltips();
+      updateScore();
+      updateStage3Gate();
+      nameModal.classList.add("open");
+      truthTables.forEach((table) => {
+        const panel = Array.from(truthTablesEl.children).find((el) => el.querySelector("h3")?.textContent === table.title);
+        if (panel) updateTruthTable(panel, table);
+      });
+      animateBug();
+    </script>
+  </body>
+</html>
+
+
